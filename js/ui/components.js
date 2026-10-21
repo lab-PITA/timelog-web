@@ -91,9 +91,9 @@ export function Toggle({ checked, onChange, label }) {
 }
 
 /** 電卓型テンキー。キーは項目タイルと同じスタイル */
-export function Keypad({ onDigit, onDelete, onExtra, extraLabel = '前回から' }) {
+export function Keypad({ onDigit, onDelete, onExtra, extraLabel = '前回から', compact = false }) {
   const key = (label, onClick, cls = '') => html`<button class="key ${cls}" onClick=${onClick}>${label}</button>`;
-  return html`<div class="keypad">
+  return html`<div class="keypad ${compact ? 'compact' : ''}">
     ${[7, 8, 9, 4, 5, 6, 1, 2, 3].map((d) => key(d, () => onDigit(d)))}
     ${key(extraLabel, onExtra, 'key-small')}
     ${key(0, () => onDigit(0))}

@@ -9,7 +9,9 @@ import { exportJson, exportCsv, parseBackup, hasUserData, BackupFormatError } fr
 import { calendarDate, isoDate } from '../../domain/dates.js';
 import * as Format from '../../domain/format.js';
 
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.2.0';
+
+const DARK_MODES = { SYSTEM: '端末に合わせる', LIGHT: 'ライト', DARK: 'ダーク' };
 
 export const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -106,6 +108,7 @@ export function SettingsScreen() {
       ${row('schedule', '1日の区切り時刻', () => setDialog('dayStart'), `${settings.dayStartHour}:00`)}
       ${row('date_range', '週の開始曜日', () => setDialog('weekStart'), `${Format.weekday(settings.weekStart)}曜日`)}
       ${row('palette', 'テーマカラー', () => setDialog('theme'), THEME_COLORS[settings.themeColor].label)}
+      ${row('dark_mode', 'ライト／ダーク', () => setDialog('darkMode'), DARK_MODES[settings.darkMode] ?? DARK_MODES.SYSTEM)}
       <div class="gap" />
       ${row('info', '使い方', () => app.open({ name: 'help' }))}
       ${row('add_to_home_screen', 'ホーム画面に追加する方法', () => app.open({ name: 'installGuide' }))}
@@ -128,6 +131,10 @@ export function SettingsScreen() {
     html`<${ChoiceDialog} title="テーマカラー"
       options=${Object.entries(THEME_COLORS).map(([key, t]) => ({ value: key, label: t.label, leading: html`<span class="swatch" style=${{ background: t.main }} />` }))}
       selected=${settings.themeColor} onSelect=${(v) => store.setSetting('themeColor', v)} onDismiss=${() => setDialog(null)} />`}
+    ${dialog === 'darkMode' &&
+    html`<${ChoiceDialog} title="ライト／ダーク" note="「端末に合わせる」は、スマホのダークモードの設定に従います"
+      options=${Object.entries(DARK_MODES).map(([value, label]) => ({ value, label }))} selected=${settings.darkMode ?? 'SYSTEM'}
+      onSelect=${(v) => store.setSetting('darkMode', v)} onDismiss=${() => setDialog(null)} />`}
     ${dialog === 'import' &&
     html`<${Dialog} title="データを読み込みますか？" onDismiss=${() => setDialog(null)} buttons=${[
       { text: 'やめる', onClick: () => setDialog(null) },

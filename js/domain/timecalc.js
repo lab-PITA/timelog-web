@@ -31,13 +31,15 @@ export function subRangeEndAligned(main, subMinutes) {
   return range(Math.max(main.end - subMinutes * MINUTE_MS, main.start), main.end);
 }
 
-/** 「前回から」キー：直前の記録の終了から今（OKの1分前）までの分数。今日の記録がなければ null。 */
-export function minutesSinceLast(lastEndMs, nowMs, dayStartHour) {
+/**
+ * 「前回から」キー：直前の記録の終了から今（OKの1分前）までの分数。
+ * 日付や1日の区切りをまたいでもよい（22日 23:00 の記録のあと、23日 1:01 に押せば 120分）。
+ * 1回の記録の上限（24時間）を超えるとき、または前の記録がないときは null。
+ */
+export function minutesSinceLast(lastEndMs, nowMs) {
   if (lastEndMs == null) return null;
-  const todayStart = dayStart(logicalDate(nowMs, dayStartHour), dayStartHour);
-  if (lastEndMs <= todayStart) return null;
   const minutes = Math.trunc((quickEnd(nowMs) - lastEndMs) / MINUTE_MS);
-  return minutes > 0 ? minutes : null;
+  return minutes >= 1 && minutes <= DAY_MINUTES ? minutes : null;
 }
 
 /** 1日の区切り（既定 3:00）を考慮した「その時刻が属する日」。 */

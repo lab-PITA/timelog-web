@@ -24,14 +24,15 @@ const TABS = [
 
 const MESSAGE_MILLIS = 3_000;
 
-/** テーマカラーを画面の色に反映する（ダークモードは端末の設定に合わせる） */
-function applyTheme(themeColor) {
+/** テーマカラーとライト／ダークを画面の色に反映する（darkMode が SYSTEM なら端末の設定に合わせる） */
+function applyTheme({ themeColor, darkMode }) {
   const theme = THEME_COLORS[themeColor] ?? THEME_COLORS.GREEN;
   const root = document.documentElement.style;
   root.setProperty('--main', theme.main);
   root.setProperty('--main-light-day', theme.light);
   root.setProperty('--main-light-night', darkLight(themeColor));
-  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const dark = darkMode === 'DARK' || (darkMode !== 'LIGHT' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#1E1E1E' : theme.main);
 }
 
@@ -71,10 +72,10 @@ function App() {
   const [stack, setStack] = useState([]);
   const [toast, setToast] = useState(null);
 
-  useEffect(() => applyTheme(store.settings.themeColor), [store.settings.themeColor]);
+  useEffect(() => applyTheme(store.settings), [store.settings.themeColor, store.settings.darkMode]);
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = () => applyTheme(app.store.settings.themeColor);
+    const onChange = () => applyTheme(app.store.settings);
     media.addEventListener('change', onChange);
     return () => media.removeEventListener('change', onChange);
   }, []);

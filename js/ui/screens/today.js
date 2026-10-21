@@ -16,7 +16,8 @@ export function buildDay(store, day) {
   const dayRange = T.dayRange(day, dayStartHour);
   const records = store.recordsInRange(dayRange);
 
-  const timeline = records.map((r) => {
+  // 一覧は新しい記録が上（開始が遅い順。同じなら後から作った記録が上）
+  const timeline = [...records].sort((a, b) => b.startAt - a.startAt || b.id - a.id).map((r) => {
     const sub = r.subCategoryId != null ? store.category(r.subCategoryId) : null;
     const subRange = recordSubRange(r);
     const subText = sub ? `サブ:${sub.name}` + (subRange ? ` ${Format.duration(T.minutesOf(subRange))}` : '') : null;

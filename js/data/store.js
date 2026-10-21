@@ -5,7 +5,7 @@ import { sampleCategories, isUntouchedSamples, OLD_SAMPLES } from './seed.js';
 import { truncateToMinute, overlaps, range } from '../domain/timecalc.js';
 import * as Format from '../domain/format.js';
 
-export const DEFAULT_SETTINGS = { dayStartHour: 3, weekStart: 1, themeColor: 'GREEN' };
+export const DEFAULT_SETTINGS = { dayStartHour: 3, weekStart: 1, themeColor: 'GREEN', darkMode: 'SYSTEM' };
 
 /** 途中解除の記録に付けるメモ（Android 版との互換のため残す） */
 export const EARLY_EXIT_MEMO = '途中解除';
@@ -266,10 +266,39 @@ export function createStore(backend) {
         categoryName: category.name,
         subId: sub?.id ?? null,
         subName: sub?.name ?? null,
+        /** 今の記録の開始時刻。サブを変えると、その時刻から新しい記録になる */
         startAt: nowMs,
+        /** 最初にスタートした時刻。経過時間の表示に使う（サブを変えても変わらない） */
+        sessionStartAt: nowMs,
       };
       commit();
       return data.timer;
+    },
+
+    /**
+     * 計測を続けたまま、サブ項目だけを変える。お知らせの文を返す（変えなかったときは null）。
+     * 1件の記録にはサブを1つしか付けられないので、それまでの分を記録として保存し、
+     * 同じメイン項目・新しいサブで、その時刻から計測を続ける。1分に満たなければ保存せずにサブだけ差し替える。
+     */
+    changeTimerSub(sub, nowMs = Date.now()) {
+      const timer = data.timer;
+      const subId = sub?.id ?? null;
+      if (!timer || timer.subId === subId) return null;
+      const record = timerToRecord(timer, nowMs);
+      if (record) data.records.push({ ...record, id: nextId(data.records) });
+      // 記録の終わり（分に切り捨てた時刻）から次の記録を始めて、すき間も重なりもできないようにする
+      data.timer = {
+        ...timer,
+        subId,
+        subName: sub?.name ?? null,
+        startAt: record ? record.endAt : timer.startAt,
+        sessionStartAt: timer.sessionStartAt ?? timer.startAt,
+      };
+      commit();
+      const newSub = sub?.name ?? 'なし';
+      return record
+        ? `${Format.range(range(record.startAt, record.endAt))} ${timer.categoryName} を記録して、サブを「${newSub}」に変えました`
+        : `サブを「${newSub}」に変えました`;
     },
 
     /** 計測を止めて記録を保存する。お知らせの文を返す（計測中でなければ null） */

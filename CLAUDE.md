@@ -25,12 +25,13 @@ Android 版「タイムログ」1.0.0 を iPhone の Safari でも使えるよ�
 - ファイルを変えたら `sw.js` の `VERSION` を上げる（上げないと、iPhone に古いファイルが残ったままになる）
 - ファイルを増やしたら `sw.js` の `FILES` にも足す（`files.test.js` が確かめる）
 - 版を上げるときは `js/ui/screens/settings.js` の `APP_VERSION` も合わせる
-- 計算ルールは `js/domain/`（Android 版 `domain/` の TimeCalc・Stats・Format の移植）。Android 版と結果が変わらないようにする
+- 計算ルールは `js/domain/`（Android 版 `domain/` の TimeCalc・Stats・Format・TimeInput の移植）。Android 版と結果が変わらないようにする
+- Android 版の変更を取り込むときは、Android 版リポジトリの `docs/WEB_CHANGES.md`（Web 版に入れる変更点の指示書）を見る。1.2.0 までは反映済み
 
 ## 構成
 - `js/domain/`：日付（エポック日数）・時間計算・集計・表示の書式。画面に依存しない
 - `js/data/`：ストア（全データを1つのオブジェクトで持ち、変更のたびに IndexedDB へ丸ごと保存）、バックアップ、色、初期項目
-- `js/ui/`：共通パーツ（`components.js`）、グラフ（`charts.js`）、ホイール（`wheels.js`）、画面（`screens/`）
+- `js/ui/`：共通パーツ（`components.js`）、グラフ（`charts.js`）、時刻・時間のテンキー入力ダイアログ（`keypad-dialogs.js`）、画面（`screens/`）
 - `js/app.js`：起動、下部タブ、サブ画面の移動（ブラウザの「戻る」でも閉じる）、お知らせ、テーマカラー
 
 ## Android 版との違い

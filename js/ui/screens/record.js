@@ -6,7 +6,7 @@ import {
   OverlapDialog, CategoryPickerDialog, CalendarDialog, DatePill, Dialog,
 } from '../components.js';
 import { Icon, CategoryIcon } from '../icons.js';
-import { TimeRangeDialog, DurationDialog } from '../wheels.js';
+import { TimeRangeDialog, DurationDialog } from '../keypad-dialogs.js';
 import { DAY_MINUTES, calendarDate } from '../../domain/dates.js';
 import * as T from '../../domain/timecalc.js';
 import { recordRange, recordSubRange } from '../../domain/stats.js';
@@ -35,7 +35,7 @@ export function RecordTab() {
 
 // ---------------- クイック記録 ----------------
 
-const emptyQuick = () => ({ categoryId: null, mainMinutes: '', subId: null, subMinutes: '', target: 'MAIN' });
+const emptyQuick = () => ({ categoryId: null, mainMinutes: '', subId: null, subMinutes: '', target: 'MAIN', notice: null });
 
 function QuickRecord() {
   const store = useStore();
@@ -58,7 +58,7 @@ function QuickRecord() {
   const main = parseInt(f.mainMinutes, 10) || null;
   const subMinutes = f.subMinutes === '' ? null : parseInt(f.subMinutes, 10);
   const range = main > 0 ? T.quickRange(now, main) : null;
-  const preview = range == null ? '分数を入力してください' : `${Format.range(range)}　${selected ? selected.name : '項目を選んでください'}`;
+  const preview = range == null ? f.notice ?? '分数を入力してください' : `${Format.range(range)}　${selected ? selected.name : '項目を選んでください'}`;
   const subPreview = range && sub ? `サブ ${Format.range(T.subRangeEndAligned(range, subMinutes))}　${sub.name}` : null;
   const canSave = selected != null && range != null && (sub == null || subMinutes == null || (subMinutes >= 1 && subMinutes <= main));
 
@@ -68,7 +68,7 @@ function QuickRecord() {
       const next = (x[key] + d).replace(/^0+/, '');
       // 1回の記録は最大24時間（1440分）
       if (next.length > 4 || (parseInt(next, 10) || 0) > DAY_MINUTES) return x;
-      return { ...x, [key]: next };
+      return { ...x, [key]: next, notice: null };
     });
   const del = () =>
     setF((x) => {
@@ -79,9 +79,15 @@ function QuickRecord() {
   const fromLast = () => {
     const t = Date.now();
     const lastEnd = store.latestEndBefore(T.quickEnd(t));
-    const minutes = T.minutesSinceLast(lastEnd, t, store.settings.dayStartHour);
-    if (minutes == null) return;
-    setF((x) => ({ ...x, mainMinutes: String(Math.min(minutes, DAY_MINUTES)), target: 'MAIN' }));
+    const minutes = T.minutesSinceLast(lastEnd, t);
+    if (minutes == null) {
+      // 押しても何も起きないと分かりにくいので、理由をプレビュー欄に出す
+      const notice =
+        lastEnd == null ? '前の記録がまだありません' : lastEnd >= T.quickEnd(t) ? '前の記録が今まで続いています' : '前の記録が24時間以上前のため使えません';
+      setF((x) => ({ ...x, mainMinutes: '', notice, target: 'MAIN' }));
+      return;
+    }
+    setF((x) => ({ ...x, mainMinutes: String(minutes), notice: null, target: 'MAIN' }));
   };
 
   const save = (record) => {
@@ -207,6 +213,7 @@ export function RecordForm({ editId = null, onFinished }) {
   const setF = isEdit ? setEditF : setNewF;
   const [dialog, setDialog] = useState(null);
   const [pending, setPending] = useState(null);
+  const [noLast, setNoLast] = useState(false);
 
   if (!f) return html`<div class="empty">この記録は削除されています</div>`;
 
@@ -254,21 +261,42 @@ export function RecordForm({ editId = null, onFinished }) {
   const subStart = f.subWhole ? f.start : f.subStart;
   const subEnd = f.subWhole ? f.end : f.subEnd;
 
+  /**
+   * 「前回の続きから」：開始を直前の記録の終わりに合わせる（時間の長さはそのまま）。
+   * 選んでいる日の終わり（今日なら今）より前に終わった、いちばん新しい記録を使う。
+   */
+  const startFromLast = () => {
+    const dayEnd = T.dayRange(f.date, dayStartHour).end;
+    const lastEnd = store.latestEndBefore(Math.min(dayEnd, Date.now()));
+    if (lastEnd == null) {
+      setNoLast(true);
+      return;
+    }
+    setNoLast(false);
+    const start = T.toMinuteOfDay(lastEnd);
+    update({ date: T.logicalDate(lastEnd, dayStartHour), start, end: (start + minutes) % DAY_MINUTES });
+    // すぐに時間を入れられるようにする
+    setDialog('duration');
+  };
+
   return html`<div class="screen-body">
     <div class="scroll">
+      ${!isEdit &&
+      html`<button class="from-last-btn" onClick=${startFromLast}><${Icon} name="history" size=${22} color="var(--main)" />前回の続きから入力</button>
+        ${noLast && html`<p class="form-error">前の記録がまだありません</p>`}`}
       <${InputRow} label="日付">
         <${DatePill} text=${Format.compactDate(f.date)} small showIcon=${false} onPrev=${() => update({ date: f.date - 1 })}
           onNext=${() => update({ date: f.date + 1 })} onClick=${() => setDialog('date')} />
       <//>
-      <${InputRow} label="開始"><${InputBox} text=${Format.clock(f.start)} onClick=${() => setDialog('main')} /><//>
-      <${InputRow} label="終了"><${InputBox} text=${Format.clock(f.end) + (endNextDay ? '（翌日）' : '')} onClick=${() => setDialog('main')} /><//>
+      <${InputRow} label="開始"><${InputBox} text=${Format.clock(f.start)} onClick=${() => setDialog({ type: 'main', first: 'start' })} /><//>
+      <${InputRow} label="終了"><${InputBox} text=${Format.clock(f.end) + (endNextDay ? '（翌日）' : '')} onClick=${() => setDialog({ type: 'main', first: 'end' })} /><//>
       <${InputRow} label="時間"><${InputBox} text=${Format.duration(minutes)} onClick=${() => setDialog('duration')} /><//>
       <${InputRow} label="サブ">
         <${InputBox} text=${sub?.name ?? 'なし'} placeholder=${!sub} onClick=${() => setDialog('subPicker')} trailing=${dropdown} />
       <//>
       ${sub &&
-      html`<${InputRow} label="サブ開始"><${InputBox} text=${subStart != null ? Format.clock(subStart) : ''} onClick=${() => setDialog('sub')} /><//>
-        <${InputRow} label="サブ終了"><${InputBox} text=${subEnd != null ? Format.clock(subEnd) : ''} onClick=${() => setDialog('sub')} /><//>`}
+      html`<${InputRow} label="サブ開始"><${InputBox} text=${subStart != null ? Format.clock(subStart) : ''} onClick=${() => setDialog({ type: 'sub', first: 'start' })} /><//>
+        <${InputRow} label="サブ終了"><${InputBox} text=${subEnd != null ? Format.clock(subEnd) : ''} onClick=${() => setDialog({ type: 'sub', first: 'end' })} /><//>`}
       <${InputRow} label="メモ"><${TextField} value=${f.memo} placeholder="メモを追加" onInput=${(memo) => update({ memo })} /><//>
       ${error && html`<p class="form-error">${error}</p>`}
       <p class="section-title">項目</p>
@@ -279,8 +307,8 @@ export function RecordForm({ editId = null, onFinished }) {
     <${PrimaryButton} text=${isEdit ? '保存する' : '記録する'} disabled=${!canSave} onClick=${save} />
 
     ${dialog === 'date' && html`<${CalendarDialog} initial=${f.date} onSelect=${(date) => update({ date })} onDismiss=${() => setDialog(null)} />`}
-    ${dialog === 'main' &&
-    html`<${TimeRangeDialog} title="記録の時間" initialStart=${f.start} initialEnd=${f.end} onDismiss=${() => setDialog(null)}
+    ${dialog?.type === 'main' &&
+    html`<${TimeRangeDialog} title="記録の時間" initialStart=${f.start} initialEnd=${f.end} first=${dialog.first} onDismiss=${() => setDialog(null)}
       onConfirm=${(start, end) => {
         update({ start, end });
         setDialog(null);
@@ -292,8 +320,8 @@ export function RecordForm({ editId = null, onFinished }) {
         if (m >= 1 && m <= DAY_MINUTES) update({ end: (f.start + m) % DAY_MINUTES });
         setDialog(null);
       }} />`}
-    ${dialog === 'sub' &&
-    html`<${TimeRangeDialog} title="サブの時間" initialStart=${subStart ?? f.start} initialEnd=${subEnd ?? f.end} onDismiss=${() => setDialog(null)}
+    ${dialog?.type === 'sub' &&
+    html`<${TimeRangeDialog} title="サブの時間" initialStart=${subStart ?? f.start} initialEnd=${subEnd ?? f.end} first=${dialog.first} onDismiss=${() => setDialog(null)}
       onConfirm=${(start, end) => {
         // 記録全体と同じ時間なら「全体」のまま（記録の時間を変えるとサブも追従する）
         if (start === f.start && end === f.end) update({ subWhole: true, subStart: null, subEnd: null });
@@ -376,7 +404,9 @@ function TimerScreen() {
 function RunningTimer({ running }) {
   const store = useStore();
   const now = useNow(1_000);
+  const [showSubPicker, setShowSubPicker] = useState(false);
   const category = store.category(running.categoryId);
+  const sessionStart = running.sessionStartAt ?? running.startAt;
   const stop = () => {
     const message = store.stopTimer();
     if (message) app.toast(message);
@@ -386,9 +416,18 @@ function RunningTimer({ running }) {
       <${CategoryIcon} category=${category} size=${72} color=${category ? undefined : 'var(--main)'} />
       <b class="running-name">${running.categoryName}</b>
       ${running.subName && html`<span class="sub">サブ：${running.subName}</span>`}
-      <b class="running-elapsed">${Format.elapsed(now - running.startAt)}</b>
-      <span class="sub">${Format.time(running.startAt)} から計測中</span>
+      ${running.subId != null && html`<button class="outline-pill" onClick=${() => setShowSubPicker(true)}>サブを変える</button>`}
+      <b class="running-elapsed">${Format.elapsed(now - sessionStart)}</b>
+      <span class="sub">${Format.time(sessionStart)} から計測中</span>
     </div>
     <${PrimaryButton} text="ストップ" danger onClick=${stop} />
+    ${showSubPicker &&
+    html`<${CategoryPickerDialog} title="サブ項目" categories=${store.categories().filter((c) => !c.isArchived)} selectedId=${running.subId}
+      onSelect=${(c) => {
+        setShowSubPicker(false);
+        const message = store.changeTimerSub(c);
+        if (message) app.toast(message);
+      }}
+      onDismiss=${() => setShowSubPicker(false)} />`}
   </div>`;
 }

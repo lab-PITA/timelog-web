@@ -23,22 +23,20 @@
   color-scheme: light;
 }
 
-/* ダークモード（企画書 6-6）：端末の設定に合わせる */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --main-light: var(--main-light-night);
-    --text: #EDEDED;
-    --sub: #A0A0A0;
-    --divider: #333333;
-    --bg: #121212;
-    --surface: #1E1E1E;
-    --group: #0A0A0A;
-    --tabbar: #1A1A1A;
-    --topbar: #1E1E1E;
-    --topbar-content: var(--main);
-    --empty: #2C2C2C;
-    color-scheme: dark;
-  }
+/* ダークモード（企画書 6-6）：設定の「ライト／ダーク」に従う（「端末に合わせる」なら端末の設定）。app.js が data-theme を付ける */
+:root[data-theme="dark"] {
+  --main-light: var(--main-light-night);
+  --text: #EDEDED;
+  --sub: #A0A0A0;
+  --divider: #333333;
+  --bg: #121212;
+  --surface: #1E1E1E;
+  --group: #0A0A0A;
+  --tabbar: #1A1A1A;
+  --topbar: #1E1E1E;
+  --topbar-content: var(--main);
+  --empty: #2C2C2C;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -303,22 +301,22 @@ p { margin: 0 0 8px; line-height: 1.6; }
 .cal-day.today { background: var(--main-light); font-weight: bold; }
 .cal-day.selected { background: var(--main); color: #fff; font-weight: bold; }
 
-/* ---- ホイール ---- */
-.wheel { position: relative; height: 132px; flex: 1; min-width: 0; }
-.wheel-band { position: absolute; left: 0; right: 0; top: 44px; height: 44px; border-radius: 8px; background: var(--main-light); }
-.wheel-scroll { position: relative; height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; overscroll-behavior: contain; }
-.wheel-scroll::-webkit-scrollbar { display: none; }
-.wheel-pad { height: 44px; }
-.wheel-item { height: 44px; display: flex; align-items: center; justify-content: center; scroll-snap-align: center; font-size: 20px; color: var(--sub); font-variant-numeric: tabular-nums; }
-.wheel-item.selected { font-size: 24px; font-weight: bold; color: var(--text); }
-.time-wheel { display: flex; align-items: center; flex: 1; min-width: 0; }
-.wheel-colon { font-size: 22px; font-weight: bold; }
-.range-heads { display: flex; justify-content: space-around; font-size: 15px; color: var(--sub); }
-.range-wheels { display: flex; align-items: center; }
-.range-tilde { padding: 0 2px; }
-.range-duration { text-align: center; color: var(--main); font-weight: bold; margin: 12px 0 0; }
-.duration-wheels { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 18px; }
-.duration-wheel { width: 72px; display: flex; }
+/* ---- 時刻・時間のテンキー入力ダイアログ ---- */
+.range-duration { text-align: center; color: var(--main); font-weight: bold; margin: 12px 0; }
+.range-duration.warning { color: var(--warning); }
+/* テンキーで時刻を入れるダイアログ */
+.time-fields { display: flex; align-items: flex-end; gap: 6px; }
+.time-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.time-field-label { font-size: 14px; color: var(--sub); text-align: center; }
+.time-field { background: var(--main-light); border-radius: 12px; border: 2px solid transparent; padding: 8px 0; text-align: center; font-size: 26px; font-weight: bold; font-variant-numeric: tabular-nums; }
+.time-field.highlighted { border-color: var(--main); }
+.time-field.placeholder { color: var(--sub); }
+.time-tilde { padding-bottom: 14px; }
+.duration-value { text-align: center; font-size: 18px; }
+.duration-value b { font-size: 36px; font-variant-numeric: tabular-nums; }
+.duration-value b.placeholder { color: var(--sub); }
+.keypad.compact { padding: 0; gap: 6px; }
+.keypad.compact .key { height: 44px; }
 
 /* ---- 共有用のまとめ画面 ---- */
 .share { position: fixed; inset: 0; z-index: 30; background: var(--bg); display: flex; flex-direction: column; padding: calc(12px + var(--safe-top)) 16px var(--safe-bottom); overflow: hidden; }
@@ -373,3 +371,8 @@ p { margin: 0 0 8px; line-height: 1.6; }
 .help-body { padding-bottom: 12px; }
 .guide h4 { font-size: 16px; margin: 12px 0 4px; }
 .install-btn { display: block; width: 100%; margin: 4px 0 12px; padding: 12px; border-radius: 24px; background: var(--main); color: #fff; font-weight: bold; text-align: center; }
+
+/* ---- 前回の続きから入力（後から入力の一番上） ---- */
+.from-last-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: calc(100% - 32px); height: 44px; margin: 8px 16px 2px; border-radius: 22px; background: var(--main-light); color: var(--main); font-size: 16px; font-weight: bold; white-space: nowrap; }
+/* ---- タイマー：サブを変える ---- */
+.outline-pill { margin-top: 6px; padding: 6px 18px; border: 1px solid var(--main); border-radius: 20px; color: var(--main); font-size: 15px; }

@@ -1,6 +1,6 @@
 // オフラインでも開けるよう、アプリのファイルを端末に保存しておく（Service Worker）。
 // ファイルを変えたら VERSION を上げる。上げると、次に開いたときに新しいファイルに入れ替わる。
-const VERSION = 'timelog-1.1.0';
+const VERSION = 'timelog-1.2.0';
 
 const FILES = [
   './',
@@ -17,6 +17,7 @@ const FILES = [
   'js/domain/timecalc.js',
   'js/domain/stats.js',
   'js/domain/format.js',
+  'js/domain/timeinput.js',
   'js/data/colors.js',
   'js/data/seed.js',
   'js/data/store.js',
@@ -27,7 +28,7 @@ const FILES = [
   'js/ui/icon-data.js',
   'js/ui/components.js',
   'js/ui/charts.js',
-  'js/ui/wheels.js',
+  'js/ui/keypad-dialogs.js',
   'js/ui/screens/record.js',
   'js/ui/screens/today.js',
   'js/ui/screens/week.js',

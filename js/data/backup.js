@@ -29,7 +29,7 @@ export function exportJson(data, nowMs = Date.now()) {
       app: APP_ID,
       version: FORMAT_VERSION,
       exportedAt: nowMs,
-      settings: { dayStartHour: s.dayStartHour, weekStart: s.weekStart, themeColor: s.themeColor },
+      settings: { dayStartHour: s.dayStartHour, weekStart: s.weekStart, themeColor: s.themeColor, darkMode: s.darkMode ?? 'SYSTEM' },
       categories: [...data.categories]
         .sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id)
         .map((c) => ({ id: c.id, name: c.name, color: c.color, icon: c.icon, sortOrder: c.sortOrder, isArchived: c.isArchived })),
@@ -134,7 +134,8 @@ export function parseBackup(text) {
       const o = root.settings;
       const dayStartHour = typeof o.dayStartHour === 'number' ? o.dayStartHour : 3;
       const weekStart = typeof o.weekStart === 'number' && o.weekStart >= 1 && o.weekStart <= 7 ? o.weekStart : 1;
-      settings = { dayStartHour, weekStart, themeColor: THEME_COLORS[o.themeColor] ? o.themeColor : 'GREEN' };
+      const darkMode = ['SYSTEM', 'LIGHT', 'DARK'].includes(o.darkMode) ? o.darkMode : 'SYSTEM';
+      settings = { dayStartHour, weekStart, themeColor: THEME_COLORS[o.themeColor] ? o.themeColor : 'GREEN', darkMode };
     }
     return { settings, categories, records, goals: uniqueGoals };
   } catch (e) {

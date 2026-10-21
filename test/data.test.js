@@ -24,6 +24,7 @@ async function seed(store) {
   store.setSetting('dayStartHour', 4);
   store.setSetting('weekStart', 7);
   store.setSetting('themeColor', 'BLUE');
+  store.setSetting('darkMode', 'DARK');
   await store.flush();
 }
 
@@ -78,7 +79,7 @@ test('書き出し → 全部消す → 読み込み で元に戻る', async () 
   assert.deepEqual(fresh.categories(), store.categories());
   assert.deepEqual(fresh.data.records, before.records);
   assert.deepEqual(fresh.data.goals, before.goals);
-  assert.deepEqual(fresh.settings, { dayStartHour: 4, weekStart: 7, themeColor: 'BLUE' });
+  assert.deepEqual(fresh.settings, { dayStartHour: 4, weekStart: 7, themeColor: 'BLUE', darkMode: 'DARK' });
 });
 
 test('Android 版の形式（color が負の数）を読める', () => {
@@ -93,6 +94,8 @@ test('Android 版の形式（color が負の数）を読める', () => {
   const parsed = parseBackup(json);
   assert.equal(parsed.categories[0].color, -45149);
   assert.deepEqual(parsed.goals, []);
+  // darkMode がないファイルは「端末に合わせる」
+  assert.equal(parsed.settings.darkMode, 'SYSTEM');
   assert.equal(parsed.records.length, 1);
 });
 
@@ -187,4 +190,29 @@ test('タイマー：開き直しても計測中、ストップは1回だけ保�
   const saved = again.data.records[0];
   assert.equal(saved.categoryId, 5);
   assert.equal((saved.endAt - saved.startAt) / 60_000, 30);
+});
+
+test('タイマー：計測中にサブだけ変える', async () => {
+  const { store } = await newStore();
+  // 12:00 に「食事＋サブ動画」でスタート
+  store.startTimer({ id: 2, name: '食事' }, { id: 12, name: '動画' }, t(12, 0, 10));
+  // 12:20 にサブを AI（id 99）に変える
+  assert.equal(store.changeTimerSub({ id: 99, name: 'AI' }, t(12, 20, 30)), '12:00〜12:20 食事 を記録して、サブを「AI」に変えました');
+  assert.equal(store.timer.startAt, t(12, 20));
+  assert.equal(store.timer.sessionStartAt, t(12, 0, 10));
+  // 同じサブなら何もしない
+  assert.equal(store.changeTimerSub({ id: 99, name: 'AI' }, t(12, 30)), null);
+  store.stopTimer(t(12, 50, 5));
+  const [a, b] = store.data.records;
+  assert.deepEqual([a.startAt, a.endAt, a.subCategoryId, a.subStartAt, a.subEndAt], [t(12, 0), t(12, 20), 12, t(12, 0), t(12, 20)]);
+  assert.deepEqual([b.startAt, b.endAt, b.subCategoryId], [t(12, 20), t(12, 50), 99]);
+});
+
+test('タイマー：1分未満でサブを変えたら記録しない', async () => {
+  const { store } = await newStore();
+  store.startTimer({ id: 2, name: '食事' }, { id: 12, name: '動画' }, t(12, 0, 10));
+  assert.equal(store.changeTimerSub(null, t(12, 0, 50)), 'サブを「なし」に変えました');
+  assert.equal(store.data.records.length, 0);
+  assert.equal(store.timer.subId, null);
+  assert.equal(store.timer.startAt, t(12, 0, 10));
 });

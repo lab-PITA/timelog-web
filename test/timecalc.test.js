@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { epochDay } from '../js/domain/dates.js';
 import * as T from '../js/domain/timecalc.js';
 import * as Format from '../js/domain/format.js';
+import * as TimeInput from '../js/domain/timeinput.js';
 
 const DSH = 3;
 const at = (y, mo, d, h, mi, s = 0) => new Date(y, mo - 1, d, h, mi, s).getTime();
@@ -27,14 +28,17 @@ test('subRange は終わり側に寄せる', () => {
   assert.deepEqual(T.subRangeEndAligned(main, 90), main);
 });
 
-test('minutesSinceLast：直前の記録の終了から数える', () => {
+test('minutesSinceLast：直前の記録の終了から数える（日付をまたいでもよい）', () => {
   const now = at(2026, 10, 16, 14, 51);
-  assert.equal(T.minutesSinceLast(at(2026, 10, 16, 13, 50), now, DSH), 60);
-  assert.equal(T.minutesSinceLast(null, now, DSH), null);
-  // 前日（区切り3:00より前）の記録しかないときは何もしない
-  assert.equal(T.minutesSinceLast(at(2026, 10, 16, 2, 0), now, DSH), null);
+  assert.equal(T.minutesSinceLast(at(2026, 10, 16, 13, 50), now), 60);
+  assert.equal(T.minutesSinceLast(null, now), null);
   // 直前の記録がすでに今の1分前まである
-  assert.equal(T.minutesSinceLast(at(2026, 10, 16, 14, 50), now, DSH), null);
+  assert.equal(T.minutesSinceLast(at(2026, 10, 16, 14, 50), now), null);
+  // ちょうど24時間前までは使える。それより前は使えない
+  assert.equal(T.minutesSinceLast(at(2026, 10, 15, 14, 50), now), 1440);
+  assert.equal(T.minutesSinceLast(at(2026, 10, 15, 14, 49), now), null);
+  // 22日 23:00 の記録のあと、23日 1:01 に押すと 120分
+  assert.equal(T.minutesSinceLast(at(2026, 10, 22, 23, 0), at(2026, 10, 23, 1, 1)), 120);
 });
 
 test('logicalDate：区切りより前は前日', () => {
@@ -116,4 +120,24 @@ test('Format の日付・時刻', () => {
   assert.equal(Format.compactDate(day), '10/16（金）');
   assert.equal(Format.range(T.range(at(2026, 10, 16, 9, 5), at(2026, 10, 16, 14, 50))), '9:05〜14:50');
   assert.equal(Format.elapsed(25 * 60_000 + 13_000), '0:25:13');
+});
+
+test('TimeInput：右から詰めて時刻にする', () => {
+  let b = '';
+  for (const d of [1, 4, 2, 0]) b = TimeInput.append(b, d);
+  assert.equal(b, '1420');
+  assert.equal(TimeInput.display(b), '14:20');
+  assert.equal(TimeInput.parse(b), 14 * 60 + 20);
+  // 5桁目は無視、先頭の0は無視
+  assert.equal(TimeInput.append(b, 5), '1420');
+  assert.equal(TimeInput.append('', 0), '');
+  assert.equal(TimeInput.display('1'), '0:01');
+  assert.equal(TimeInput.display('14'), '0:14');
+  assert.equal(TimeInput.display('142'), '1:42');
+  assert.equal(TimeInput.parse('930'), 9 * 60 + 30);
+  // 正しくない時刻
+  assert.equal(TimeInput.parse('2460'), null);
+  assert.equal(TimeInput.parse('175'), null);
+  assert.equal(TimeInput.parse(''), null);
+  assert.equal(TimeInput.remove('142'), '14');
 });
