@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 緑の地に白いドーナツグラフ。一切れだけ外にずらす（時計の絵は使わない） -->
+  <rect width="512" height="512" fill="#3BAA5C"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="76">
+    <path d="M 264.37 136.29 A 120 120 0 1 1 148.14 203.40"/>
+    <path d="M 156.52 188.90 A 120 120 0 0 1 247.63 136.29" transform="translate(-11.00 -19.05)"/>
+  </g>
+</svg>

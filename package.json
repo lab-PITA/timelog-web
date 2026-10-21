@@ -1,0 +1,9 @@
+{
+  "name": "timelog-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "TZ=Asia/Tokyo node --test test/*.test.js",
+    "serve": "node scripts/serve.js"
+  }
+}
