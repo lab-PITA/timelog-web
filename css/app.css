@@ -360,3 +360,16 @@ p { margin: 0 0 8px; line-height: 1.6; }
   .tab { height: 56px; }
   .topbar-inner { height: 52px; }
 }
+
+/* ---- 使い方 ---- */
+.intro-steps { padding-left: 1.4em; margin: 0 0 8px; line-height: 1.6; }
+.intro-steps li { margin-bottom: 4px; }
+.intro-more { background: var(--main-light); border-radius: 12px; padding: 10px 12px; }
+.help-section { border-bottom: 1px solid var(--divider); }
+.help-section summary { list-style: none; cursor: pointer; padding: 14px 0; font-weight: bold; font-size: 17px; color: var(--main); display: flex; align-items: center; }
+.help-section summary::-webkit-details-marker { display: none; }
+.help-section summary::after { content: '＋'; margin-left: auto; color: var(--sub); }
+.help-section[open] summary::after { content: '－'; }
+.help-body { padding-bottom: 12px; }
+.guide h4 { font-size: 16px; margin: 12px 0 4px; }
+.install-btn { display: block; width: 100%; margin: 4px 0 12px; padding: 12px; border-radius: 24px; background: var(--main); color: #fff; font-weight: bold; text-align: center; }

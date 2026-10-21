@@ -1,7 +1,7 @@
 // データの保存と読み書き。Android 版の Room（項目・記録・目標）・DataStore（設定）・タイマーの状態をまとめて持つ。
 // 全データを1つのオブジェクトとしてメモリに置き、変更のたびにブラウザの中（IndexedDB）へ丸ごと保存する。
 // 項目・記録・目標の形は Android 版のテーブルと同じ（バックアップ JSON をそのまま読み書きできるように）。
-import { sampleCategories } from './seed.js';
+import { sampleCategories, isUntouchedSamples, OLD_SAMPLES } from './seed.js';
 import { truncateToMinute, overlaps, range } from '../domain/timecalc.js';
 import * as Format from '../domain/format.js';
 
@@ -20,8 +20,8 @@ function initialData() {
     lastCarriedWeek: null,
     /** 計測中のタイマー（なければ null） */
     timer: null,
-    /** 「ホーム画面に追加」の案内を閉じたか */
-    installHintClosed: false,
+    /** 初めて開いたときの簡単な使い方を閉じたか */
+    introShown: false,
   };
 }
 
@@ -86,7 +86,13 @@ export function createStore(backend) {
       const raw = await backend.load();
       if (raw) {
         data = { ...initialData(), ...raw, settings: { ...DEFAULT_SETTINGS, ...raw.settings } };
-        notify();
+        // 以前の初期項目のまま何も記録していなければ、新しい初期項目に入れ替える
+        if (data.records.length === 0 && data.goals.length === 0 && isUntouchedSamples(data.categories, OLD_SAMPLES)) {
+          data.categories = sampleCategories();
+          await commit();
+        } else {
+          notify();
+        }
       } else {
         data = initialData();
         await commit();
@@ -241,8 +247,8 @@ export function createStore(backend) {
       commit();
     },
 
-    closeInstallHint() {
-      data.installHintClosed = true;
+    closeIntro() {
+      data.introShown = true;
       commit();
     },
 

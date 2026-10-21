@@ -1,6 +1,6 @@
 // データのバックアップ（企画書 4-7）。Android 版 Backup.kt と同じ形式の JSON を読み書きする。
 // Android 版で書き出したファイルをブラウザ版で読み込める（逆も可）。
-import { SAMPLES } from './seed.js';
+import { isUntouchedSamples } from './seed.js';
 import { THEME_COLORS } from './colors.js';
 import { isoDate } from '../domain/dates.js';
 import { logicalDate } from '../domain/timecalc.js';
@@ -19,12 +19,7 @@ export class BackupFormatError extends Error {}
  */
 export function hasUserData(data) {
   if (data.records.length > 0 || data.goals.length > 0) return true;
-  const current = [...data.categories].sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
-  if (current.length !== SAMPLES.length) return true;
-  return current.some((c, i) => {
-    const [name, color, icon] = SAMPLES[i];
-    return c.name !== name || c.color !== color || c.icon !== icon || c.isArchived;
-  });
+  return !isUntouchedSamples(data.categories);
 }
 
 export function exportJson(data, nowMs = Date.now()) {

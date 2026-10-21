@@ -10,7 +10,8 @@ import { RecordTab, EditRecordScreen } from './ui/screens/record.js';
 import { TodayScreen } from './ui/screens/today.js';
 import { WeekScreen } from './ui/screens/week.js';
 import { GoalScreen, GoalEditScreen } from './ui/screens/goal.js';
-import { SettingsScreen, InstallGuideScreen } from './ui/screens/settings.js';
+import { SettingsScreen } from './ui/screens/settings.js';
+import { IntroDialog, HelpScreen, InstallGuideScreen } from './ui/screens/help.js';
 import { CategoryListScreen, CategoryEditScreen } from './ui/screens/categories.js';
 
 const TABS = [
@@ -57,6 +58,8 @@ function SubScreen({ route }) {
       return html`<${GoalEditScreen} week=${route.week} />`;
     case 'installGuide':
       return html`<${InstallGuideScreen} />`;
+    case 'help':
+      return html`<${HelpScreen} />`;
     default:
       return null;
   }
@@ -108,10 +111,18 @@ function App() {
       <${BottomTabBar} selected=${tab} onSelect=${setTab} />
     </div>
     ${route && html`<div class="sub-screen"><${SubScreen} route=${route} /></div>`}
+    ${!store.data.introShown && html`<${IntroDialog} onClose=${() => store.closeIntro()} />`}
     ${toast && html`<div class="toast" key=${toast.id} onClick=${() => setToast(null)}>${toast.message}</div>`}
     ${store.saveError && html`<div class="save-error">保存できませんでした。空き容量を確認して、もう一度操作してください。</div>`}
   `;
 }
+
+// Android の Chrome：「ホーム画面に追加」の確認を、案内画面のボタンから出せるようにとっておく
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  app.installPrompt = e;
+  window.dispatchEvent(new Event('timelog-installable'));
+});
 
 async function main() {
   const backend = await browserBackend();

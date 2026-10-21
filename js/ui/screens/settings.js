@@ -1,5 +1,5 @@
 // 設定タブ（企画書 6-4）。参考の「その他」画面と同じ構成。
-// Android 専用の項目（集中モード・バッテリーの案内、エラーの記録）の代わりに、ホーム画面に追加する方法の案内を置く。
+// Android 版にしかない項目（集中モード・バッテリーの案内、エラーの記録）の代わりに、使い方とホーム画面に追加する方法の案内を置く。
 import { html, useState, useRef } from '../../vendor/preact-htm.js';
 import { app, useStore, clearSession } from '../context.js';
 import { TopBar, ChoiceDialog, Dialog } from '../components.js';
@@ -9,7 +9,7 @@ import { exportJson, exportCsv, parseBackup, hasUserData, BackupFormatError } fr
 import { calendarDate, isoDate } from '../../domain/dates.js';
 import * as Format from '../../domain/format.js';
 
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.1.0';
 
 export const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -62,13 +62,13 @@ export function SettingsScreen() {
   };
 
   const savedBody = (how, text) =>
-    how === 'shared' ? `${text}\n\n共有の画面で「"ファイル"に保存」を選んだ場合は、iPhone の「ファイル」アプリに保存されています。` : text;
+    how === 'shared' ? `${text}\n\n共有の画面で「"ファイル"に保存」を選んだ場合は、「ファイル」アプリに保存されています。` : text;
 
   const exportData = () =>
     run('書き出しに失敗しました', async () => {
       const how = await saveFile(`timelog-backup-${today()}.json`, exportJson(store.data), 'application/json');
       if (how === 'cancelled') return null;
-      return { title: '書き出しました', body: savedBody(how, '機種変更のときは、このファイルを新しいスマホに移して「データの読み込み」をしてください。Android 版のタイムログでも読み込めます。') };
+      return { title: '書き出しました', body: savedBody(how, '機種変更のときは、このファイルを新しいスマホに移して、タイムログの「設定」→「データの読み込み」で読み込んでください。') };
     });
   const exportCsvFile = () =>
     run('CSV出力に失敗しました', async () => {
@@ -107,6 +107,7 @@ export function SettingsScreen() {
       ${row('date_range', '週の開始曜日', () => setDialog('weekStart'), `${Format.weekday(settings.weekStart)}曜日`)}
       ${row('palette', 'テーマカラー', () => setDialog('theme'), THEME_COLORS[settings.themeColor].label)}
       <div class="gap" />
+      ${row('info', '使い方', () => app.open({ name: 'help' }))}
       ${row('add_to_home_screen', 'ホーム画面に追加する方法', () => app.open({ name: 'installGuide' }))}
       <div class="gap" />
       ${row('upload', 'データの書き出し', exportData)}
@@ -133,40 +134,12 @@ export function SettingsScreen() {
       { text: 'ファイルを選ぶ', bold: true, onClick: () => { setDialog(null); pickFile(); } },
     ]}>
       <p>読み込むと、今のアプリの項目・記録・目標・設定は、すべてファイルの内容に置き換わります。</p>
-      <p>次の画面で、「データの書き出し」で保存したファイル（timelog-backup-…json）を選んでください。Android 版で書き出したファイルも読み込めます。</p>
+      <p>次の画面で、「データの書き出し」で保存したファイル（timelog-backup-…json）を選んでください。</p>
     <//>`}
     ${message &&
     html`<${Dialog} title=${message.title} titleClass=${message.error ? 'warning' : ''} onDismiss=${() => setMessage(null)}
       buttons=${[{ text: 'OK', bold: true, onClick: () => setMessage(null) }]}>
       ${message.body.split('\n\n').map((p) => html`<p>${p}</p>`)}
     <//>`}
-  </div>`;
-}
-
-/** ホーム画面に追加する方法（iPhone の Safari） */
-export function InstallGuideScreen() {
-  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-  return html`<div class="screen">
-    <${TopBar} title="ホーム画面に追加" onBack=${app.back} />
-    <div class="scroll guide">
-      ${standalone
-        ? html`<p class="guide-ok">このタイムログは、ホーム画面から開かれています。設定は済んでいます。</p>`
-        : html`<p>ホーム画面に追加すると、ふつうのアプリのようにアイコンから開けるようになり、インターネットがなくても使えます。</p>`}
-      <h3>なぜ追加するのがよいか</h3>
-      <p>iPhone の Safari は、しばらく開かなかったサイトのデータを自動で消すことがあります。ホーム画面に追加して使うと、記録が消えにくくなります。</p>
-      <h3>追加のしかた（Safari）</h3>
-      <ol>
-        <li>Safari でこのページを開く</li>
-        <li>画面下（または上）の <b>共有ボタン</b>（四角から上向きの矢印が出ているマーク）を押す</li>
-        <li>一覧を下へスクロールして <b>「ホーム画面に追加」</b> を押す</li>
-        <li>右上の <b>「追加」</b> を押す</li>
-      </ol>
-      <p>ホーム画面に「タイムログ」のアイコンができたら、次からはそこから開いてください。</p>
-      <h3>注意</h3>
-      <ul>
-        <li>Safari で開いたときと、ホーム画面から開いたときでは、データが別々に保存されます。追加したら、ホーム画面から開く方だけを使ってください。</li>
-        <li>データは iPhone の中だけに保存されます。ときどき「設定」→「データの書き出し」でバックアップを取っておくと安心です。</li>
-      </ul>
-    </div>
   </div>`;
 }

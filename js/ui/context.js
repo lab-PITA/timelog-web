@@ -10,6 +10,8 @@ export const app = {
   back: () => {},
   /** 画面下に短いお知らせを出す */
   toast: (message) => {},
+  /** Android の Chrome で「ホーム画面に追加」を出すためのもの（使えないときは null） */
+  installPrompt: null,
 };
 
 /** ストアが変わったら画面を描き直す */

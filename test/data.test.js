@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { createStore, memoryBackend, timerToRecord, EARLY_EXIT_MEMO } from '../js/data/store.js';
 import { exportJson, parseBackup, exportCsv, hasUserData, BackupFormatError } from '../js/data/backup.js';
 import { epochDay } from '../js/domain/dates.js';
+import { OLD_SAMPLES } from '../js/data/seed.js';
 
 const at = (h, m, s = 0) => new Date(2026, 9, 16, h, m, s).getTime();
 
@@ -15,7 +16,7 @@ async function newStore() {
 }
 
 async function seed(store) {
-  store.addRecord({ categoryId: 7, startAt: at(8, 0), endAt: at(9, 0), subCategoryId: 4, subStartAt: at(8, 40), subEndAt: at(9, 0), memo: null, createdAt: 1 });
+  store.addRecord({ categoryId: 5, startAt: at(8, 0), endAt: at(9, 0), subCategoryId: 4, subStartAt: at(8, 40), subEndAt: at(9, 0), memo: null, createdAt: 1 });
   store.addRecord({ categoryId: 4, startAt: at(20, 0), endAt: at(21, 30), subCategoryId: null, subStartAt: null, subEndAt: null, memo: '数学, "問題集"\n2章', createdAt: 2 });
   const study = store.categories().find((c) => c.name === '勉強');
   store.updateCategory({ ...study, name: '勉強（資格）' });
@@ -30,9 +31,31 @@ test('初回は項目16個が入る', async () => {
   const { store } = await newStore();
   const names = store.categories().map((c) => c.name);
   assert.equal(names.length, 16);
-  assert.equal(names[0], '動画');
-  assert.equal(names[11], '自分時間');
-  assert.equal(store.categories()[0].color, 0xffff4fa3 | 0);
+  assert.equal(names[0], '睡眠');
+  assert.equal(names[7], '化粧');
+  assert.equal(new Set(store.categories().map((c) => c.icon)).size, 16);
+  assert.equal(store.categories()[0].color, 0xff1e3a9e | 0);
+});
+
+test('初期項目は上下左右で同じ色が隣り合わない', async () => {
+  const { store } = await newStore();
+  const colors = store.categories().map((c) => c.color);
+  for (let i = 0; i < 16; i++) {
+    if (i % 4 !== 3) assert.notEqual(colors[i], colors[i + 1], `${i} と右`);
+    if (i + 4 < 16) assert.notEqual(colors[i], colors[i + 4], `${i} と下`);
+  }
+});
+
+test('以前の初期項目のままなら新しい初期項目に入れ替わる', async () => {
+  const old = OLD_SAMPLES.map(([name, color, icon], i) => ({ id: i + 1, name, color, icon, sortOrder: i, isArchived: false }));
+  const base = { records: [], goals: [], settings: { dayStartHour: 3, weekStart: 1, themeColor: 'GREEN' }, lastCarriedWeek: null, timer: null };
+  const fresh = createStore(memoryBackend({ ...base, categories: old }));
+  await fresh.load();
+  assert.equal(fresh.categories()[0].name, '睡眠');
+  // 記録があれば変えない
+  const used = createStore(memoryBackend({ ...base, categories: old, records: [{ id: 1, categoryId: 2, startAt: 0, endAt: 60_000, createdAt: 0 }] }));
+  await used.load();
+  assert.equal(used.categories()[0].name, '動画');
 });
 
 test('閉じて開き直してもデータが残る', async () => {
