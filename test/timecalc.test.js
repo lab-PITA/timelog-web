@@ -122,22 +122,36 @@ test('Format の日付・時刻', () => {
   assert.equal(Format.elapsed(25 * 60_000 + 13_000), '0:25:13');
 });
 
-test('TimeInput：右から詰めて時刻にする', () => {
-  let b = '';
-  for (const d of [1, 4, 2, 0]) b = TimeInput.append(b, d);
-  assert.equal(b, '1420');
-  assert.equal(TimeInput.display(b), '14:20');
-  assert.equal(TimeInput.parse(b), 14 * 60 + 20);
-  // 5桁目は無視、先頭の0は無視
-  assert.equal(TimeInput.append(b, 5), '1420');
-  assert.equal(TimeInput.append('', 0), '');
-  assert.equal(TimeInput.display('1'), '0:01');
-  assert.equal(TimeInput.display('14'), '0:14');
-  assert.equal(TimeInput.display('142'), '1:42');
-  assert.equal(TimeInput.parse('930'), 9 * 60 + 30);
-  // 正しくない時刻
-  assert.equal(TimeInput.parse('2460'), null);
-  assert.equal(TimeInput.parse('175'), null);
+const type = (digits, from = '') => digits.reduce((b, d) => TimeInput.append(b, d), from);
+
+test('TimeInput：左から埋める', () => {
+  assert.equal(TimeInput.display(type([1])), '1-:--');
+  assert.equal(TimeInput.display(type([1, 2])), '12:--');
+  assert.equal(TimeInput.display(type([1, 2, 3])), '12:3-');
+  assert.equal(TimeInput.display(type([1, 2, 3, 4])), '12:34');
+  assert.equal(TimeInput.parse(type([1, 2, 3, 4])), 12 * 60 + 34);
+  // 5桁目は入らない
+  assert.equal(type([1, 2, 3, 4, 5]), '1234');
+});
+
+test('TimeInput：消すと右から戻り、その位置に入れ直せる', () => {
+  const three = TimeInput.remove('1234');
+  assert.equal(TimeInput.display(three), '12:3-');
+  assert.equal(TimeInput.display(type([4], three)), '12:34');
+  const two = TimeInput.remove(three);
+  assert.equal(TimeInput.display(two), '12:--');
+  assert.equal(TimeInput.display(type([4], two)), '12:4-');
+});
+
+test('TimeInput：ありえない数字は入らない', () => {
+  // 時の1桁目が3〜9なら0を補う
+  assert.equal(TimeInput.display(type([9])), '09:--');
+  assert.equal(TimeInput.parse(type([9, 3, 0])), 9 * 60 + 30);
+  // 24時以上・60分以上にはならない
+  assert.equal(type([2, 4]), '2');
+  assert.equal(type([2, 3]), '23');
+  assert.equal(type([1, 2, 6]), '12');
+  // 途中や空は時刻として使えない
+  assert.equal(TimeInput.parse('123'), null);
   assert.equal(TimeInput.parse(''), null);
-  assert.equal(TimeInput.remove('142'), '14');
 });

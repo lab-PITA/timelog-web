@@ -1,29 +1,39 @@
 // テンキーでの時刻入力（後から入力・記録の編集）。Android 版 domain/TimeInput.kt と同じ。
-// 電子レンジのタイマーのように右から詰めて入れる：1 → 0:01、14 → 0:14、142 → 1:42、1420 → 14:20。
-// 4桁まで。時は0〜23、分は0〜59のときだけ時刻として使える。
+// 「時・時・分・分」の4桁を左から順に埋める：1 → 1-:--、12 → 12:--、123 → 12:3-、1234 → 12:34。
+// 消すと右から1桁ずつ戻る（12:34 → 12:3- → 12:--）。
+// ありえない数字は入らない（時の2桁目で24以上・分の1桁目で6以上になるとき）。
+// 時の1桁目に3〜9を押したら、0を補って「09:--」にする。
 
 export const MAX_DIGITS = 4;
 
 export function append(buffer, digit) {
-  return buffer.length >= MAX_DIGITS ? buffer : (buffer + digit).replace(/^0+/, '');
+  switch (buffer.length) {
+    case 0:
+      return digit >= 3 ? `0${digit}` : `${digit}`;
+    case 1:
+      return parseInt(buffer, 10) * 10 + digit <= 23 ? buffer + digit : buffer;
+    case 2:
+      return digit <= 5 ? buffer + digit : buffer;
+    case 3:
+      return buffer + digit;
+    default:
+      return buffer;
+  }
 }
 
 export function remove(buffer) {
   return buffer.slice(0, -1);
 }
 
-/** 入力中の数字を「14:20」の形にする（空なら null） */
+/** 入力中の数字を「12:3-」の形にする（空なら null） */
 export function display(buffer) {
   if (buffer === '') return null;
-  const padded = buffer.padStart(MAX_DIGITS, '0');
-  return `${parseInt(padded.slice(0, 2), 10)}:${padded.slice(2)}`;
+  const p = buffer.padEnd(MAX_DIGITS, '-');
+  return `${p[0]}${p[1]}:${p[2]}${p[3]}`;
 }
 
-/** 時刻として正しければ 0:00 からの分、空・範囲外なら null */
+/** 4桁そろっていれば 0:00 からの分、空・途中なら null */
 export function parse(buffer) {
-  if (buffer === '') return null;
-  const padded = buffer.padStart(MAX_DIGITS, '0');
-  const hour = parseInt(padded.slice(0, 2), 10);
-  const minute = parseInt(padded.slice(2), 10);
-  return hour < 24 && minute < 60 ? hour * 60 + minute : null;
+  if (buffer.length !== MAX_DIGITS) return null;
+  return parseInt(buffer.slice(0, 2), 10) * 60 + parseInt(buffer.slice(2), 10);
 }

@@ -1,6 +1,6 @@
 // オフラインでも開けるよう、アプリのファイルを端末に保存しておく（Service Worker）。
 // ファイルを変えたら VERSION を上げる。上げると、次に開いたときに新しいファイルに入れ替わる。
-const VERSION = 'timelog-1.2.0';
+const VERSION = 'timelog-1.2.1';
 
 const FILES = [
   './',

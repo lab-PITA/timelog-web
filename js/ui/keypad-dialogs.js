@@ -42,7 +42,7 @@ export function TimeRangeDialog({ title, initialStart, initialEnd, first = 'star
       <div class="time-col"><span class="time-field-label">終了</span>${field('end', '終了')}</div>
     </div>
     <p class="range-duration ${valid ? '' : 'warning'}">
-      ${valid ? `時間 ${Format.duration(duration)}${end <= start ? '（終了は翌日）' : ''}` : '時刻が正しくありません（例：1420 → 14:20）'}
+      ${valid ? `時間 ${Format.duration(duration)}${end <= start ? '（終了は翌日）' : ''}` : '分まで4桁で入れてください（例：1420 → 14:20）'}
     </p>
     <${Keypad} compact onDigit=${digit} extraLabel="クリア"
       onExtra=${() => setBuffers({ ...buffers, [target]: '' })}
