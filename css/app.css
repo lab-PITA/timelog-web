@@ -126,6 +126,8 @@ p { margin: 0 0 8px; line-height: 1.6; }
 .date-pill.small { padding: 10px 8px; }
 .date-pill-text { flex: 1; text-align: center; font-size: 20px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .date-pill.small .date-pill-text { font-size: 16px; }
+/* 月や年をまたぐ週（2026年12月28日〜2027年1月3日 など）でも切れないよう、長い日付は文字を小さくする */
+.date-pill:not(.small) .date-pill-text { font-size: min(20px, calc((100vw - 165px) / var(--em, 10))); }
 .date-pill-text small { font-size: 14px; font-weight: normal; }
 
 /* ---- 入力行・入力欄 ---- */

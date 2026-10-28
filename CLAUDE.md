@@ -26,7 +26,7 @@ Android 版「タイムログ」1.0.0 を iPhone の Safari でも使えるよ�
 - ファイルを増やしたら `sw.js` の `FILES` にも足す（`files.test.js` が確かめる）
 - 版を上げるときは `js/ui/screens/settings.js` の `APP_VERSION` も合わせる
 - 計算ルールは `js/domain/`（Android 版 `domain/` の TimeCalc・Stats・Format・TimeInput の移植）。Android 版と結果が変わらないようにする
-- Android 版の変更を取り込むときは、Android 版リポジトリの `docs/WEB_CHANGES.md`（Web 版に入れる変更点の指示書）を見る。1.2.1 までは反映済み
+- Android 版の変更を取り込むときは、Android 版リポジトリの `docs/WEB_CHANGES.md`（Web 版に入れる変更点の指示書）を見る。1.2.2 までは反映済み
 
 ## 構成
 - `js/domain/`：日付（エポック日数）・時間計算・集計・表示の書式。画面に依存しない

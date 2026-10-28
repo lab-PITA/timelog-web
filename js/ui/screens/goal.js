@@ -1,6 +1,6 @@
 // 目標タブ（企画書 4-8・6-4）と目標の設定画面。参考の「予算」画面と同じ構成
 import { html, useState, useEffect } from '../../vendor/preact-htm.js';
-import { app, useStore, useSession } from '../context.js';
+import { app, useStore, useSession, useNow } from '../context.js';
 import { TopBar, DatePill, CalendarDialog, PrimaryButton, SwitchTabs, InputRow, InputBox, Toggle, CategoryGrid, Keypad } from '../components.js';
 import { Icon, CategoryIcon } from '../icons.js';
 import { ProgressBar, WeekdayBarsDialog, weekLabels } from '../charts.js';
@@ -20,11 +20,13 @@ export function GoalScreen() {
   const [offset, setOffset] = useSession('goalOffset', 0);
   const [dialog, setDialog] = useState(null);
 
-  // 新しい週になっていたら、前の週の目標を引き継ぐ
-  useEffect(() => store.carryOverGoals(currentWeek(store, 0)), []);
+  // 今の時刻は1分ごとに取り直す。画面を開いたまま週が終わっても、「達成」の判定と目安の線が進むようにする
+  const now = useNow(60_000);
+  const thisWeek = currentWeek(store, 0);
+  // 新しい週になっていたら、前の週の目標を引き継ぐ（開いたまま週が変わったときも）
+  useEffect(() => store.carryOverGoals(thisWeek), [thisWeek]);
 
-  const now = Date.now();
-  const week = currentWeek(store, offset);
+  const week = thisWeek + offset * 7;
   const range = weekRange(week, store.settings.dayStartHour);
   const stats = new Map(aggregate(store.recordsInRange(range), week, 7, store.settings.dayStartHour).map((s) => [s.categoryId, s]));
   const finished = now >= range.end;
@@ -80,7 +82,8 @@ function GoalRow({ item, pace, onClick }) {
   if (p.over) {
     right = `超過 ${Format.duration(p.overMinutes)}`;
     rightColor = 'var(--warning)';
-  } else if (!(p.type === 'AT_LEAST' && p.remainingMinutes === 0)) {
+  } else if (!(p.achieved || (p.type === 'AT_LEAST' && p.remainingMinutes === 0))) {
+    // 達成した目標（以内の目標は週が終わってから）には「残り」を出さない
     right = `残り ${Format.duration(p.remainingMinutes)}`;
     if (p.nearLimit) rightColor = CAUTION_YELLOW;
   }
@@ -93,7 +96,7 @@ function GoalRow({ item, pace, onClick }) {
     <span class="bar-row-bar">
       <${ProgressBar} fraction=${p.percent / 100} color=${p.over ? 'var(--warning)' : categoryColor} marker=${pace}
         hatchedFraction=${p.targetMinutes > 0 ? item.subMinutes / p.targetMinutes : 0} />
-      ${p.type === 'AT_LEAST' && p.achieved &&
+      ${p.achieved &&
       html`<span class="achieved"><${Icon} name="check_circle" size=${20} color=${ACHIEVED_GREEN} />達成</span>`}
       <b class="goal-pct" style=${{ color: p.over ? 'var(--warning)' : 'var(--text)' }}>${Math.round(p.percent)}%</b>
     </span>

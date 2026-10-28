@@ -9,7 +9,7 @@ import { exportJson, exportCsv, parseBackup, hasUserData, BackupFormatError } fr
 import { calendarDate, isoDate } from '../../domain/dates.js';
 import * as Format from '../../domain/format.js';
 
-export const APP_VERSION = '1.2.1';
+export const APP_VERSION = '1.2.2';
 
 const DARK_MODES = { SYSTEM: '端末に合わせる', LIGHT: 'ライト', DARK: 'ダーク' };
 

@@ -46,7 +46,7 @@ export function WeekScreen() {
                   <span class="value">${Format.duration(row.stat.totalMinutes)}</span>
                 </span>
                 <span class="bar-row-bar">
-                  <${ProgressBar} fraction=${row.stat.totalMinutes / max} color=${colorOf(row.category)} />
+                  <${ProgressBar} fraction=${row.stat.totalMinutes / max} color=${colorOf(row.category)} hatchedFraction=${row.stat.subMinutes / max} />
                   <span class="bar-pct">${Format.percent1(row.percent)}</span>
                 </span>
                 ${row.stat.subMinutes > 0 && html`<span class="list-detail">うちサブ ${Format.duration(row.stat.subMinutes)}</span>`}

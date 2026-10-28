@@ -24,12 +24,17 @@ export function SwitchTabs({ options, selected, onSelect }) {
   </div>`;
 }
 
+/** 文字列のおおよその幅（文字の高さ何個分か）。半角の数字は約0.6、日本語は1として数える */
+function textWidthEm(text) {
+  return [...text].reduce((w, c) => w + (/[\x20-\x7e]/.test(c) ? 0.6 : 1), 0);
+}
+
 /** 日付ピル：＜ [ 2026年10月16日（金） 📅 ] ＞ */
 export function DatePill({ text, subText, onPrev, onNext, onClick, small = false, showIcon = true }) {
   return html`<div class="date-pill-row">
     <button class="icon-btn sub" aria-label="前へ" onClick=${onPrev}><${Icon} name="chevron_left" /></button>
     <button class="date-pill ${small ? 'small' : ''}" onClick=${onClick}>
-      <span class="date-pill-text">${text}${subText && html`<small> ${subText}</small>`}</span>
+      <span class="date-pill-text" style=${small ? null : { '--em': textWidthEm(text) }}>${text}${subText && html`<small> ${subText}</small>`}</span>
       ${showIcon && html`<${Icon} name="calendar_month" color="var(--main)" />`}
     </button>
     <button class="icon-btn sub" aria-label="次へ" onClick=${onNext}><${Icon} name="chevron_right" /></button>
